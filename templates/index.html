@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Resume Evaluator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      background-color: #141416;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    h2, h3 {
+      color: #da0000;
+    }
+    label {
+      font-weight: bold;
+      color: #ffffff;
+    }
+    textarea, input[type="file"] {
+      width: 100%;
+      max-width: 2675px;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 20px;
+      border: 1px solid #a6a6a6;
+      border-radius: 4px;
+      background-color: #1f1f21;
+      color: #ffffff;
+    }
+    input[type="submit"] {
+      background-color: #da0000;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    input[type="submit"]:hover {
+      background-color: #a60000;
+    }
+    .result-box {
+      background-color: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      border-left: 5px solid #da0000;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 16px;
+      color: #ffffff;
+      margin-top: 10px;
+    }
+
+    .container {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .features-table {
+      flex: 1 1 500px;
+    }
+    .chart-container {
+      flex: 1 1 500px;
+      position: sticky;
+      top: 100px;
+    }
+    .summary-box {
+      background-color: #1e1e1e;
+      padding: 15px;
+      margin-top: 4px;
+      border-radius: 5px;
+      border: 1px solid #a6a6a6;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #a6a6a6;
+      text-align: left;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+      max-width: 600px;
+      aspect-ratio: 1;
+    }
+    .download-btn {
+      margin-top: 10px;
+      padding: 8px 16px;
+      background-color: #da0000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .download-btn:hover {
+      background-color: #a60000;
+    }
+    .loader {
+      display: none;
+      margin-top: 10px;
+      color: #a6a6a6;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+<header style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+  <h1 style="color: #da0000; font-size: 26px;">Resume Classifier</h1>
+  <span style="color: #a6a6a6; font-size: 14px;">by Ahmed Elsisi</span>
+</header>
+  <form id="resumeForm" enctype="multipart/form-data">
+    <label>Job Description:</label><br>
+    <textarea name="job_desc" rows="10" required></textarea><br>
+    <label>Upload Resume (PDF only):</label><br>
+    <input type="file" name="resume_file" accept="application/pdf" required><br>
+    <input type="submit" value="Evaluate">
+    <div class="loader" id="loader">Processing, please wait...</div>
+  </form>
+
+  <div id="resultsArea"></div>
+
+  <script>
+    const form = document.getElementById('resumeForm');
+    const loader = document.getElementById('loader');
+    const resultsArea = document.getElementById('resultsArea');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loader.style.display = 'block';
+      resultsArea.innerHTML = '';
+
+      const formData = new FormData(form);
+
+      const response = await fetch('/predict', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+      loader.style.display = 'none';
+
+      resultsArea.innerHTML = `
+        <h3>Prediction Result</h3>
+        <div class="result-box">${data.result}</div>
+        <div class="container">
+          <div class="features-table">
+            <h3>Extracted Features</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.features.map(f => `<tr style="background-color:${f.color}"><td>${f.feature}</td><td>${f.value}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="chart-container">
+            <h3>Scores Chart</h3>
+            <canvas id="radarChart"></canvas>
+            <div class="summary-box" id="summaryBox"></div>
+            <button class="download-btn" onclick="saveChart()">Download Chart</button>
+          </div>
+        </div>
+      `;
+
+      const ctx = document.getElementById('radarChart').getContext('2d');
+      const radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: data.radar.labels,
+          datasets: [{
+            label: "Resume Metrics",
+            data: data.radar.data,
+            borderColor: "#da0000",
+            borderWidth: 3,
+            pointRadius: 4,
+            pointBackgroundColor: "#da0000",
+            backgroundColor: "rgba(218, 0, 0, 0.2)"
+          }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              r: {
+                angleLines: { color: '#333' },
+                grid: { color: '#444' },
+                pointLabels: {
+                  color: '#ffffff',
+                  font: {
+                    size: 20
+                  }
+                },
+                ticks: {
+                  color: '#ffffff',
+                  font: {
+                    size: 12
+                  }
+                },
+                suggestedMin: 0,
+                suggestedMax: 100
+              }
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  color: '#ffffff',
+                  font: {
+                    size: 20
+                  }
+                }
+              }
+            }
+          },
+      });
+
+      const metrics = data.radar.data.map((val, i) => ({ label: data.radar.labels[i], value: val }))
+        .sort((a, b) => b.value - a.value);
+      document.getElementById('summaryBox').innerHTML = `
+        <strong>Top Strengths:</strong> ${metrics.slice(0, 2).map(m => m.label).join(', ')}<br>
+        <strong>Weak Points:</strong> ${metrics.slice(-2).map(m => m.label).join(', ')}
+      `;
+    });
+    document.getElementById("quote-box").style.display = "block";
+    function saveChart() {
+      const link = document.createElement('a');
+      link.download = 'resume_radar_chart.png';
+      link.href = document.getElementById('radarChart').toDataURL();
+      link.click();
+    }
+  </script>
+
+  <div id="quote-box" style="display: none;">
+    <blockquote style="border-left: 5px solid #da0000; padding-left: 15px; color: #a6a6a6; font-style: italic; margin-top: 20px;">
+      "This resume was auto-evaluated using NLP & Machine Learning. Here's what stands out."
+    </blockquote>
+  </div>
+
+  <footer style="text-align: right; color: #555; font-size: 12px; margin-top: 40px;">
+    Built with Flask, NLP, and XGBoost by Ahmed Elsisi - March 2025
+  </footer>
+
+</body>
+</html>
