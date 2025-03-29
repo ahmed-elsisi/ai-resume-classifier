@@ -38,13 +38,25 @@ def get_nlp():
 #     return tool
 
 experience_date_patterns = [
-    r'(\b(?:January|February|March|April|May|June|July|August|September|October|November|December)[.,]?\s?\d{4})\s*[-–to]+\s*(?:\b(?:January|February|March|April|May|June|July|August|September|October|November|December)[.,]?\s?\d{4}|Present|Current)',
-    r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.,]?\s?\d{4})\s*[-–to]+\s*(?:\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.,]?\s?\d{4}|Present|Current)',
-    r'(\d{2}[/.\\-]\d{4})\s*[-–to]+\s*(\d{2}[/.\\-]\d{4}|Present|Current)',
-    r'(\b\d{4})\s*[-–to]+\s*(\d{4}|Present|Current)',
-    r'(\d{2}[/.\\-]?\d{2})\s*[-–to]+\s*(\d{2}[/.\\-]?\d{2}|Present|Current)',
+    # Flexible MM/YYYY or M/YYYY
     r'(\d{1,2}[/.\\-]\d{4})\s*[-–to]+\s*(\d{1,2}[/.\\-]\d{4}|Present|Current)',
+
+    # Full month names
+    r'(\b(?:January|February|March|April|May|June|July|August|September|October|November|December)[.,]?\s?\d{4})\s*[-–to]+\s*(?:\b(?:January|February|March|April|May|June|July|August|September|October|November|December)[.,]?\s?\d{4}|Present|Current)',
+
+    # Abbreviated month names
+    r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.,]?\s?\d{4})\s*[-–to]+\s*(?:\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.,]?\s?\d{4}|Present|Current)',
+
+    # Year ranges
+    r'(\b\d{4})\s*[-–to]+\s*(\d{4}|Present|Current)',
+
+    # 2-digit month/year shorthand (e.g., 03/23)
+    r'(\d{2}[/.\\-]?\d{2})\s*[-–to]+\s*(\d{2}[/.\\-]?\d{2}|Present|Current)',
+
+    # Since/From with optional month
     r'\b(Since|From)\s+(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[.,]?\s*)?\d{4}',
+
+    # Standalone "Present" or "Current"
     r'\b(Current|Present)\b'
 ]
 
@@ -61,8 +73,8 @@ def extract_experience_years(text):
                 continue  # skip single or malformed entries
 
             try:
-                start_date = parse(start_str, fuzzy=True)
-                end_date = parse(end_str, fuzzy=True) if "Present" not in end_str and "Current" not in end_str else today
+                start_date = parse(start_str.lower(), fuzzy=True)
+                end_date = parse(end_str.lower(), fuzzy=True) if not re.search(r'present|current', end_str, re.I) else today
                 if start_date < end_date:
                     experience_periods.append((start_date, end_date))
             except Exception:
@@ -85,13 +97,6 @@ def extract_experience_years(text):
         total_months += max(0, months)
 
     return round(total_months / 12, 2)
-
-def get_special_terms(text):
-    doc = get_nlp()(text)
-    special_terms = set(ent.text.split() for ent in doc.ents)
-    acronyms = re.findall(r'\b[A-Z]{2,}(?:-[A-Z]+)*\b', text)
-    special_terms.update(acronyms)
-    return special_terms
 
 # def count_dynamic_filtered_errors(text):
 #     matches = get_tool().check(text)
