@@ -5,8 +5,14 @@ import language_tool_python
 from sentence_transformers import SentenceTransformer, util
 from dateparser import parse
 
+try:
+    nlp = spacy.load("en_core_web_sm")
+except:
+    import os
+    os.system("python -m spacy download en_core_web_sm")
+    nlp = spacy.load("en_core_web_sm")
+    
 model = SentenceTransformer('all-MiniLM-L6-v2')
-nlp = spacy.load('en_core_web_sm')
 tool = language_tool_python.LanguageTool('en-US')
 
 experience_date_patterns = [
