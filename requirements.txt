@@ -1,0 +1,10 @@
+flask
+gunicorn
+spacy
+sentence-transformers
+xgboost
+scikit-learn
+joblib
+PyMuPDF
+language-tool-python
+dateparser
