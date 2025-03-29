@@ -26,12 +26,12 @@ def get_nlp():
             nlp = spacy.load("en_core_web_sm")
     return nlp
 
-def get_tool():
-    global tool
-    if tool is None:
-        import language_tool_python
-        tool = language_tool_python.LanguageTool('en-US')
-    return tool
+# def get_tool():
+#     global tool
+#     if tool is None:
+#         import language_tool_python
+#         tool = language_tool_python.LanguageTool('en-US')
+#     return tool
 
 experience_date_patterns = [
     r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})\s?[-–]\s?(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?\s*\d{4}|Present|Current)',
@@ -71,18 +71,18 @@ def get_special_terms(text):
     special_terms.update(acronyms)
     return special_terms
 
-def count_dynamic_filtered_errors(text):
-    matches = get_tool().check(text)
-    special_terms = get_special_terms(text)
+# def count_dynamic_filtered_errors(text):
+#     matches = get_tool().check(text)
+#     special_terms = get_special_terms(text)
 
-    filtered_errors = []
-    for match in matches:
-        error_word = match.context[match.offsetInContext: match.offsetInContext + match.errorLength]
-        if error_word in special_terms:
-            continue
-        filtered_errors.append(match)
+#     filtered_errors = []
+#     for match in matches:
+#         error_word = match.context[match.offsetInContext: match.offsetInContext + match.errorLength]
+#         if error_word in special_terms:
+#             continue
+#         filtered_errors.append(match)
 
-    return len(filtered_errors)
+#     return len(filtered_errors)
 
 def semantic_similarity(texts, job_desc_embedding):
     embeddings = get_model().encode(texts)
@@ -148,7 +148,8 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
     scores = semantic_similarity([skills_text, cert_text, experience_text, edu_text], job_desc_embedding)
     skills_score, cert_score, exp_score, edu_score = scores
 
-    grammatical_errors_count = round(count_dynamic_filtered_errors(full_text) / 10, 2)
+    # grammatical_errors_count = round(count_dynamic_filtered_errors(full_text) / 10, 2)
+    grammatical_errors_count = 0
 
     features = {
         **basic_info,
