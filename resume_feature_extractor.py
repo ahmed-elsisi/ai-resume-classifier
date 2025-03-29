@@ -160,7 +160,7 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
     exp_section = re.findall(r'EXPERIENCE\s*(.*?)(NOTABLE ACHIEVEMENTS|EDUCATION|CERTIFICATIONS|PROJECTS|SKILLS|$)', full_text, re.I | re.S)
     experience_text = ' '.join([m[0].strip().replace('\n', ' ') for m in exp_section]) if exp_section else 'Not found'
     
-    internships_count = len(re.findall(r'\bIntern(?:ship)?\b', experience_text, re.IGNORECASE))
+    internships_count = len(re.findall(r'\b(Intern(ship)?|Trainee)\b', text, re.IGNORECASE))
     experience_years = extract_experience_years(experience_text)
     
     edu_section = re.findall(r'EDUCATION\s*&?\s*CERTIFICATIONS?\s*(.*?)(SKILLS|PROJECTS|EXPERIENCE|LANGUAGES|$)', full_text, re.I | re.S)
