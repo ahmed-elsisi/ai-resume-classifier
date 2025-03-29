@@ -1,6 +1,10 @@
 import fitz
 import re
-from dateparser import parse
+import spacy
+import language_tool_python
+from sentence_transformers import SentenceTransformer, util
+from dateutil.parser import parse
+from datetime import datetime
 
 # Lazy-load globals
 model = None
@@ -34,35 +38,52 @@ def get_nlp():
 #     return tool
 
 experience_date_patterns = [
-    r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4})\s?[-–]\s?(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)?\s*\d{4}|Present|Current)',
-    r'(\d{4})\s?[-–]\s?(\d{4}|Present|Current)'
+    r'(\b(?:January|February|March|April|May|June|July|August|September|October|November|December)[.,]?\s?\d{4})\s*[-–to]+\s*(?:\b(?:January|February|March|April|May|June|July|August|September|October|November|December)[.,]?\s?\d{4}|Present|Current)',
+    r'(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.,]?\s?\d{4})\s*[-–to]+\s*(?:\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[.,]?\s?\d{4}|Present|Current)',
+    r'(\d{2}[/.\\-]\d{4})\s*[-–to]+\s*(\d{2}[/.\\-]\d{4}|Present|Current)',
+    r'(\b\d{4})\s*[-–to]+\s*(\d{4}|Present|Current)',
+    r'(\d{2}[/.\\-]?\d{2})\s*[-–to]+\s*(\d{2}[/.\\-]?\d{2}|Present|Current)',
+    r'\b(Since|From)\s+(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[.,]?\s*)?\d{4}',
+    r'\b(Current|Present)\b'
 ]
 
 def extract_experience_years(text):
     experience_periods = []
-    today = parse("today")
+    today = datetime.today()
 
     for pattern in experience_date_patterns:
-        matches = re.findall(pattern, text, re.I)
-        for start, end in matches:
-            start_date = parse(start)
-            end_date = parse(end) if "Present" not in end and "Current" not in end else today
-            if start_date and end_date:
-                experience_periods.append((start_date, end_date))
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        for match in matches:
+            if isinstance(match, tuple) and len(match) == 2:
+                start_str, end_str = match
+            else:
+                continue  # skip single or malformed entries
 
+            try:
+                start_date = parse(start_str, fuzzy=True)
+                end_date = parse(end_str, fuzzy=True) if "Present" not in end_str and "Current" not in end_str else today
+                if start_date < end_date:
+                    experience_periods.append((start_date, end_date))
+            except Exception:
+                continue
+
+    # Merge overlapping periods
     experience_periods.sort()
-    total_experience_years = 0
-    last_end_date = None
+    merged_periods = []
 
-    for start_date, end_date in experience_periods:
-        if last_end_date is None or start_date > last_end_date:
-            total_experience_years += (end_date.year - start_date.year)
-            last_end_date = end_date
-        elif end_date > last_end_date:
-            total_experience_years += (end_date.year - last_end_date.year)
-            last_end_date = end_date
+    for start, end in experience_periods:
+        if not merged_periods or start > merged_periods[-1][1]:
+            merged_periods.append([start, end])
+        else:
+            merged_periods[-1][1] = max(merged_periods[-1][1], end)
 
-    return max(0, total_experience_years)
+    # Calculate total experience in months
+    total_months = 0
+    for start, end in merged_periods:
+        months = (end.year - start.year) * 12 + (end.month - start.month)
+        total_months += max(0, months)
+
+    return round(total_months / 12, 2)
 
 def get_special_terms(text):
     doc = get_nlp()(text)
@@ -135,7 +156,10 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
 
     exp_section = re.findall(r'EXPERIENCE\s*(.*?)(NOTABLE ACHIEVEMENTS|EDUCATION|CERTIFICATIONS|PROJECTS|SKILLS|$)', full_text, re.I | re.S)
     experience_text = ' '.join([m[0].strip().replace('\n', ' ') for m in exp_section]) if exp_section else 'Not found'
-
+    
+    internships_count = re.findall(r'\bIntern(?:ship)?\b', experience_text, re.IGNORECASE)
+    experience_years = extract_experience_years(experience_text)
+    
     edu_section = re.findall(r'EDUCATION\s*&?\s*CERTIFICATIONS?\s*(.*?)(SKILLS|PROJECTS|EXPERIENCE|LANGUAGES|$)', full_text, re.I | re.S)
     edu_text = ' '.join([m[0].strip().replace('\n', ' ') for m in edu_section]) if edu_section else 'Not found'
 
