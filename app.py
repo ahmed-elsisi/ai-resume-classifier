@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, make_response
 import os
 import tempfile
 import joblib
@@ -41,6 +41,11 @@ feature_scales = {
     'Communication': (0, 1)
 }
 
+@app.after_request
+def allow_iframe(response):
+    response.headers['X-Frame-Options'] = 'ALLOWALL'
+    return response
+    
 @app.route('/', methods=['GET'])
 def index():
     with open("templates/index.html") as f:
