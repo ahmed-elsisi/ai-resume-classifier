@@ -124,8 +124,8 @@ def predict():
                 return '#2a2a2a'
 
         features_json = []
-        features_dict['Grammatical_Mistakes_Rate'] = features_dict.pop('Grammatical_Mistakes_Count')
-
+        # features_dict['Grammatical_Mistakes_Rate'] = features_dict.pop('Grammatical_Mistakes_Count')
+        features_dict.pop('Grammatical_Mistakes_Count')
         for key, val in features_dict.items():
             if 'Grammatical' not in key:
                 display = f"{val*100:.1f}%" if isinstance(val, float) and 0 <= val <= 1 else val
