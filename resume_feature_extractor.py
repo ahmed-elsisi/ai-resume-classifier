@@ -151,9 +151,6 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
     elif re.search(r'B\.E\.|B\.Sc\.|Bachelor', full_text, re.I):
         education_level = "Bachelor's"
 
-    experience_years = extract_experience_years(full_text)
-    internships_count = len(re.findall(r'\bIntern(ship)?\b', full_text, re.I))
-
     exp_section = re.findall(r'EXPERIENCE\s*(.*?)(NOTABLE ACHIEVEMENTS|EDUCATION|CERTIFICATIONS|PROJECTS|SKILLS|$)', full_text, re.I | re.S)
     experience_text = ' '.join([m[0].strip().replace('\n', ' ') for m in exp_section]) if exp_section else 'Not found'
     
@@ -184,7 +181,7 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
         'Industry_Relevance_Score': round((skills_score + exp_score) / 2, 3)*2,
         'Education_Score': edu_score*2,
         'Certifications_Score': cert_score,
-        'Experience_Score': exp_score*2,
+        'Experience_Score': exp_score*1.5,
         'Extracurricular_Activities': "Yes" if re.search(r'EXTRACURRICULAR|VOLUNTEER', full_text, re.I) else "No",
         'Grammatical_Mistakes_Count': grammatical_errors_count
     }
