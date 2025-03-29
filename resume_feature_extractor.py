@@ -43,6 +43,7 @@ experience_date_patterns = [
     r'(\d{2}[/.\\-]\d{4})\s*[-–to]+\s*(\d{2}[/.\\-]\d{4}|Present|Current)',
     r'(\b\d{4})\s*[-–to]+\s*(\d{4}|Present|Current)',
     r'(\d{2}[/.\\-]?\d{2})\s*[-–to]+\s*(\d{2}[/.\\-]?\d{2}|Present|Current)',
+    r'(\d{1,2}[/.\\-]\d{4})\s*[-–to]+\s*(\d{1,2}[/.\\-]\d{4}|Present|Current)',
     r'\b(Since|From)\s+(?:(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)[.,]?\s*)?\d{4}',
     r'\b(Current|Present)\b'
 ]
