@@ -135,7 +135,7 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
                     linkedin_url = uri
                     break
 
-    full_text = re.sub(r'•|\*|- ', '', full_text)
+    full_text = re.sub(r'^\s*[-•*▪‣➤►❖✔️]+\s*', '', full_text, flags=re.MULTILINE)
 
     doc = get_nlp()(full_text)
     locations = extract_entities(doc, 'GPE')
@@ -156,9 +156,10 @@ def comprehensive_resume_extraction_with_ner(pdf_path, job_desc_embedding):
         education_level = "Master's"
     elif re.search(r'B\.E\.|B\.Sc\.|Bachelor', full_text, re.I):
         education_level = "Bachelor's"
-
-    exp_section = re.findall(r'EXPERIENCE\s*(.*?)(NOTABLE ACHIEVEMENTS|EDUCATION|CERTIFICATIONS|PROJECTS|SKILLS|$)', full_text, re.I | re.S)
-    experience_text = ' '.join([m[0].strip().replace('\n', ' ') for m in exp_section]) if exp_section else 'Not found'
+    
+    exp_section = re.findall(r'EXPERIENCE(.*?)(SKILLS|EDUCATION|CERTIFICATIONS|PROJECTS|$)', full_text, re.I | re.S)
+    experience_text = ' '.join(
+        [match[0].strip().replace('\n', ' ') for match in exp_section]) if exp_section else 'Not found'
     
     internships_count = len(re.findall(r'\b(Intern(ship)?|Trainee)\b', experience_text, re.IGNORECASE))
     experience_years = extract_experience_years(experience_text)
