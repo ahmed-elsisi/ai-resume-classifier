@@ -138,9 +138,16 @@ def predict():
                     display = "Excellent"
             else:
                 display = val
+            if key == 'Education Level':
+                if '1' in str(val):
+                    display = "Bachelor's"
+                elif '2' in str(val):
+                    display = "Master's"
+                elif '3' in str(val):
+                    display = "PhD"
             if val == '' or not val:
                 display = 'Not Found'
-
+            
             color = score_to_color(val, feature_importance.get(key, 0), feature_scales.get(key, (0, 1)), key, features_dict)
             features_json.append({
                 'feature': key.replace('_', ' '),
