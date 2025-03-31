@@ -138,7 +138,7 @@ def predict():
                     display = "Excellent"
             else:
                 display = val
-            if key == 'Education Level':
+            if key == 'Education_Level':
                 if '1' in str(val):
                     display = "Bachelor's"
                 elif '2' in str(val):
