@@ -134,6 +134,8 @@ def predict():
         for key, val in features_dict.items():
             if 'Grammatical' not in key:
                 display = f"{val*100:.1f}%" if isinstance(val, float) and 0 <= val <= 1 else val
+                if 'score' in key.lower() and val > 1:
+                    display = "Excellent"
             else:
                 display = val
             if val == '' or not val:
