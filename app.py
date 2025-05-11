@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, render_template_string, make_response
+from flask import send_from_directory
 import os
 import tempfile
 import joblib
@@ -6,6 +7,8 @@ from resume_feature_extractor import extract_resume_features
 
 app = Flask(__name__)
 model = joblib.load("xgb_model.pkl")
+UPLOAD_FOLDER = os.path.join("uploads")
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 feature_importance = {
     'Number_of_Pages': 0.05188,
@@ -59,9 +62,10 @@ def predict():
     if not job_desc or not resume_file:
         return jsonify({'error': 'Missing input'}), 400
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-        resume_file.save(temp_pdf.name)
-        pdf_path = temp_pdf.name
+    filename = resume_file.filename
+    pdf_path = os.path.join(UPLOAD_FOLDER, filename)
+    resume_file.save(pdf_path)
+
 
     try:
         features_dict = extract_resume_features(job_desc, pdf_path)
@@ -174,6 +178,22 @@ def predict():
 
     finally:
         os.remove(pdf_path)
+
+
+@app.route('/download/<filename>', methods=['GET'])
+def download_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename, as_attachment=True)
+
+
+@app.route('/uploads', methods=['GET'])
+def list_uploaded_files():
+    try:
+        files = os.listdir(UPLOAD_FOLDER)
+        files = [f for f in files if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
+        return jsonify({'files': files})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
