@@ -4,6 +4,9 @@ import os
 import tempfile
 import joblib
 from resume_feature_extractor import extract_resume_features
+import requests
+from io import BytesIO
+
 
 app = Flask(__name__)
 model = joblib.load("xgb_model.pkl")
@@ -194,7 +197,8 @@ def predict():
         })
 
     finally:
-        os.remove(pdf_path)
+        if tmp_path:
+            os.remove(tmp_path)
 
 
 @app.route('/download/<filename>', methods=['GET'])
