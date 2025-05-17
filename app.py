@@ -66,6 +66,7 @@ def predict():
         return jsonify({'error': 'Missing input'}), 400
 
     filename = resume_file.filename
+    tmp_path = None
 
     try:
         # Read the file into memory once
